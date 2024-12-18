@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>Content Form</title>
+</head>
+<body>
+<h1 th:text="${content.id == null ? 'Create Content' : 'Edit Content'}"></h1>
+<form th:action="@{/admin/content}" th:object="${content}" method="post">
+  <input type="text" th:field="*{title}" placeholder="Title" required />
+  <textarea th:field="*{body}" placeholder="Body"></textarea>
+  <button type="submit">Save</button>
+</form>
+</body>
+</html>

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Round Status</title>
+    <script>
+        // Function to update button status based on round status
+        function updateButtonStatus(roundId, roundStatus, roundCloseTimeMillis) {
+            const buyButton = document.getElementById("buyButton-" + roundId);
+            const statusLabel = document.getElementById("status-" + roundId);
+
+            // Check if round is active or closed
+            if (roundStatus === "ACTIVE" && roundCloseTimeMillis > new Date().getTime()) {
+                buyButton.disabled = false;
+                buyButton.classList.remove("disabled-button");
+                buyButton.classList.add("active-button");
+                buyButton.innerText = "Buy Ticket"; // Button text for active round
+                statusLabel.innerText = "Active";  // Set status to active
+            } else {
+                buyButton.disabled = true;
+                buyButton.classList.remove("active-button");
+                buyButton.classList.add("disabled-button");
+                buyButton.innerText = "Round Closed"; // Button text for closed round
+                statusLabel.innerText = "Closed"; // Set status to closed
+            }
+        }
+
+        // Countdown Timer for each round
+        function startCountdown(roundId, roundCloseTimeMillis) {
+            const timerDisplay = document.getElementById("countdown-" + roundId);
+
+            const interval = setInterval(function () {
+                const now = new Date().getTime();
+                const distance = roundCloseTimeMillis - now;
+
+                if (distance <= 0) {
+                    clearInterval(interval);
+                    updateButtonStatus(roundId, "CLOSED", roundCloseTimeMillis); // Handle button and status update
+                    timerDisplay.innerText = "Round Closed";
+                } else {
+                    const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                    timerDisplay.innerText = `${hours}h ${minutes}m ${seconds}s`;
+                }
+            }, 1000);
+        }
+
+        // This function runs on page load to initialize all rounds
+        window.onload = function () {
+            const rounds = document.querySelectorAll('[id^="round-"]'); // Select all rows with round IDs
+            rounds.forEach(function (round) {
+                const roundId = round.getAttribute('data-round-id');
+                const roundStatus = document.getElementById("status-" + roundId).innerText;
+                const roundCloseTime = document.getElementById("roundCloseTime-" + roundId).innerText;
+
+                // Convert roundCloseTime to milliseconds
+                const roundCloseTimeMillis = new Date(roundCloseTime).getTime();
+
+                updateButtonStatus(roundId, roundStatus, roundCloseTimeMillis);  // Update button status
+                startCountdown(roundId, roundCloseTimeMillis);  // Start countdown for each round
+            });
+        }
+    </script>
+    <style>
+        .active-button {
+            background-color: green;
+            color: white;
+        }
+        .disabled-button {
+            background-color: gray;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+<h1>Round Status</h1>
+
+<table>
+    <thead>
+    <tr>
+        <th>Round</th>
+        <th>Status</th>
+        <th>Close Time</th>
+        <th>Action</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="round : ${rounds}">
+        <td th:text="${round.id}">Round Name</td>
+        <td th:text="${round.status.name()}">Status</td> <!-- Use name() to get enum name -->
+        <td th:text="${round.formattedCloseTime}">Close Time</td>
+        <td>
+            <form th:action="@{/user/buy}" method="get">
+            <button
+                    th:disabled="${round.status.name() != 'ACTIVE'}"
+            th:text="${round.status.name() == 'ACTIVE' ? 'Do Action' : 'Inactive'}" type="submit">
+            <!-- The button text changes based on status -->
+            </button>'
+            </form>
+        </td>
+    </tr>
+    </tbody>
+</table>
+
+</body>
+</html>

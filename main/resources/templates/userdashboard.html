@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>User Dashboard</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        #toastMessage {
+            visibility: hidden;
+            min-width: 250px;
+            margin: auto;
+            background-color: #4caf50;
+            color: white;
+            text-align: center;
+            border-radius: 5px;
+            padding: 15px;
+            position: fixed;
+            z-index: 1;
+            left: 50%;
+            top: 20px;
+            transform: translateX(-50%);
+            box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        #toastMessage.show {
+            visibility: visible;
+            animation: fadeout 0.5s ease-out 9.5s forwards;
+        }
+
+        @keyframes fadeout {
+            from {
+                opacity: 1;
+            }
+            to {
+                opacity: 0;
+                visibility: hidden;
+            }
+        }
+        .upcoming {
+            color: green;
+        }
+        .closed {
+            color: red;
+        }
+        .button-upcoming {
+            background-color: green;
+            color: white;
+        }
+        .button-closed {
+            background-color: gray;
+            color: white;
+            cursor: not-allowed;
+        }
+    </style>
+
+</head>
+<body>
+<div id="toastMessage" th:if="${successMessage}" th:text="${successMessage}"></div>
+
+<form th:action="@{/user/otp}" method="get">
+    <button type="submit" th:if="${!isVerified}" style="background-color: red; color: white;">Email Otp</button>
+</form>
+<button th:if="${isVerified}" style="background-color: green; color: white;">Verified</button>
+
+<h1>User Dashboard</h1>
+
+<h1>Round Information</h1>
+
+<!-- Round Information Display -->
+<p><strong>Round ID:</strong> <span th:text="${round.roundId}"></span></p>
+<p><strong>Time:</strong> <span th:text="${#dates.format(round.time, 'yyyy-MM-dd HH:mm:ss')}"></span></p>
+<p><strong>Round Close Time:</strong> <span th:text="${#dates.format(round.roundCloseTime, 'yyyy-MM-dd HH:mm:ss')}"></span></p>
+
+<p>
+    <strong>Status:</strong>
+    <span th:text="${round.status}" th:classappend="${round.status == 'upcoming' ? 'upcoming' : 'closed'}"></span>
+</p>
+
+<!-- Button with Conditional Behavior -->
+<button th:classappend="${round.status == 'upcoming' ? 'button-upcoming' : 'button-closed'}"
+        th:disabled="${round.status == 'closed'}">
+    <span th:text="${round.status == 'upcoming' ? 'Click to Join' : 'Closed'}"></span>
+</button>
+
+
+<p th:if="${message}" th:text="${message}" style="color:green;"></p>
+<p th:if="${error}" th:text="${error}" style="color:red;"></p>
+</body>
+</html>

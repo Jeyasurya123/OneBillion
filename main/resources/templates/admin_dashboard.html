@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Dashboard</title>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> <!-- jQuery -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> <!-- SweetAlert2 for popups -->
+</head>
+<body>
+<h1>Admin Dashboard</h1>
+
+<!-- Display flash message -->
+<div th:if="${param.message}">
+  <p th:text="${param.message}"></p>
+</div>
+<div th:if="${param.error}">
+  <p th:text="${param.error}"></p>
+</div>
+
+<!-- Form to create a new round -->
+<h2>Create New Round</h2>
+<form id="createRoundForm">
+  <label for="roundAmount">Round Amount:</label>
+  <input type="number" name="roundAmount" step="0.01" required>
+  <br>
+  <label for="roundCloseTime">Round Close Time:</label>
+  <input type="datetime-local" name="roundCloseTime" required>
+  <br>
+  <label for="status">Status:</label>
+  <select name="status" required>
+    <option value="ACTIVE">Active</option>
+    <option value="UPCOMING">Upcoming</option>
+    <option value="CLOSE">Close</option>
+  </select>
+  <br>
+  <button type="submit">Create Round</button>
+</form>
+
+<!--<form action="/admin/createRound" method="post">-->
+<!--  <label for="roundAmount">Round Amount:</label>-->
+<!--  <input type="number" name="roundAmount" step="0.01" required>-->
+<!--  <br>-->
+<!--  <label for="roundCloseTime">Round Close Time:</label>-->
+<!--  <input type="datetime-local" name="roundCloseTime" required>-->
+<!--  <br>-->
+<!--  <label for="status">Status:</label>-->
+<!--  <select name="status" required>-->
+<!--    <option value="ACTIVE">Active</option>-->
+<!--    <option value="UPCOMING">Upcoming</option>-->
+<!--    <option value="CLOSE">Close</option>-->
+<!--  </select>-->
+<!--  <br>-->
+<h2>All Rounds</h2>
+<!-- Display error messages -->
+<div th:if="${error}">
+  <p style="color: red; font-weight: bold;" th:text="${error}"></p>
+</div>
+
+<!-- Display success messages -->
+<div th:if="${message}">
+  <p style="color: green; font-weight: bold;" th:text="${message}"></p>
+</div>
+<table border="1">
+  <thead>
+  <tr>
+    <th>Round ID</th>
+    <th>Round Amount</th>
+    <th>Round Close Time</th>
+    <th>Status</th>
+    <th>Actions</th>
+    <th>Winning Numbers</th>
+  </tr>
+  </thead>
+  <tbody>
+  <!-- Only show rounds where status is not CLOSE and winning numbers are not set -->
+  <tr th:each="round : ${rounds}" th:if="${round.status != T(com.example.OneBillion.Model.RoundStatus).CLOSE or round.winningNumbers == null}">
+    <td th:text="${round.id}"></td>
+    <td th:text="${round.roundAmount}"></td>
+    <td th:text="${#temporals.format(round.roundCloseTime, 'yyyy-MM-dd HH:mm')}"></td>
+    <td th:text="${round.status}"></td>
+    <td th:if="${round.status == T(com.example.OneBillion.Model.RoundStatus).CLOSE}" th:text="${round.winningNumbers}"></td>
+<!--    <td th:if="${round.status != T(com.example.OneBillion.Model.RoundStatus).CLOSE}">-</td>-->
+
+    <td>
+      <!-- Update Status Form -->
+      <form th:action="@{/admin/updateStatus}" method="post">
+        <input type="hidden" name="roundId" th:value="${round.id}">
+        <select name="status">
+          <option value="ACTIVE" th:selected="${round.status == 'ACTIVE'}">Active</option>
+          <option value="UPCOMING" th:selected="${round.status == 'UPCOMING'}">Upcoming</option>
+          <option value="CLOSE" th:selected="${round.status == 'CLOSE'}">Close</option>
+        </select>
+        <button type="submit">Update Status</button>
+      </form>
+
+      <!-- Winning Numbers Form, only show when status is CLOSE -->
+    <td th:if="${round.status == T(com.example.OneBillion.Model.RoundStatus).CLOSE}">
+      <form th:action="@{/admin/chooseWinningNumbers}" method="post">
+        <input type="hidden" name="roundId" th:value="${round.id}">
+        <label for="winningNumbers">Select 7 Winning Numbers (0-49):</label>
+        <input type="text" name="winningNumbers" required placeholder="e.g. 3, 7, 21, 28, 33, 44, 49">
+        <button type="submit">Set Winning Numbers</button>
+      </form>
+    </td>
+    </td>
+  </tr>
+  </tbody>
+</table>
+<form th:action="@{/admin/adm}" method="get">
+  <button type="submit">Go Back</button>
+</form>
+<script>
+  $('#createRoundForm').submit(function(e) {
+   e.preventDefault();
+
+   // Create FormData to send with the request
+   var formData = $(this).serialize();
+
+   // Send AJAX POST request to create a new round
+   $.ajax({
+     type: 'POST',
+     url: '/admin/createRound',
+     data: formData,
+     success: function(response) {
+       Swal.fire({
+         title: 'Success!',
+         text: 'New round created successfully. Redirecting to the dashboard...',
+         icon: 'success',
+         confirmButtonText: 'OK'
+       }).then(() => {
+         // Redirect to the Admin Dashboard
+         window.location.href = '/admin/button'; // Replace this URL with your actual dashboard URL
+       });
+     },
+     error: function(error) {
+       Swal.fire({
+         title: 'Error!',
+         text: 'There was an issue creating the round.',
+         icon: 'error',
+         confirmButtonText: 'OK'
+       });
+     }
+   });
+ });
+</script>
+
+<script>
+  // Form validation for setting winning numbers
+  $('form[action="/admin/chooseWinningNumbers"]').submit(function (e) {
+      let winningNumbers = $(this).find('input[name="winningNumbers"]').val();
+      let numbers = winningNumbers.split(',').map(num => num.trim());
+
+      // Check if there are exactly 7 numbers
+      if (numbers.length !== 7) {
+          e.preventDefault();
+          Swal.fire({
+              title: 'Error!',
+              text: 'Please enter exactly 7 numbers.',
+              icon: 'error',
+              confirmButtonText: 'OK'
+          });
+          return;
+      }
+
+      // Check if all numbers are between 0 and 49
+      if (numbers.some(num => isNaN(num) || num < 0 || num > 49)) {
+          e.preventDefault();
+          Swal.fire({
+              title: 'Error!',
+              text: 'Each number must be between 0 and 49.',
+              icon: 'error',
+              confirmButtonText: 'OK'
+          });
+          return;
+      }
+
+      // Check for duplicate numbers
+      let uniqueNumbers = new Set(numbers);
+      if (uniqueNumbers.size !== numbers.length) {
+          e.preventDefault();
+          Swal.fire({
+              title: 'Error!',
+              text: 'Duplicate numbers are not allowed.',
+              icon: 'error',
+              confirmButtonText: 'OK'
+          });
+          return;
+      }
+  });
+</script>
+
+</body>
+</html>

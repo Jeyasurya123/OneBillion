@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>Verify OTP</title>
+  <script>
+    // JavaScript to handle the countdown timer
+    document.addEventListener("DOMContentLoaded", function () {
+        const countdownElement = document.getElementById("countdown");
+        let timeLeft = 30; // 30 seconds for OTP expiration
+
+        // Function to update the timer every second
+        const countdown = setInterval(() => {
+            if (timeLeft <= 0) {
+                clearInterval(countdown); // Stop the timer
+                document.getElementById("resend-message").style.display = "block"; // Show the resend message
+                countdownElement.textContent = "OTP expired! Please resend.";
+            } else {
+                countdownElement.textContent = `Time left: ${timeLeft} seconds`;
+                timeLeft--;
+            }
+        }, 1000);
+    });
+  </script>
+</head>
+<body>
+<h1>Verify OTP</h1>
+<form th:action="@{/user/verify-otp}" method="post">
+  <input type="hidden" name="email" th:value="${email}">
+  <label for="otp">OTP:</label>
+  <input type="text" id="otp" name="otp" required>
+  <button type="submit">Verify</button>
+</form>
+
+<!-- Display the countdown timer -->
+<p id="countdown" style="color: blue; font-weight: bold;"></p>
+
+<!-- Message to indicate OTP expiration and resend option -->
+<p id="resend-message" style="color: red; display: none;">
+  OTP expired. <a href="/otp">Click here</a> to request a new OTP.
+</p>
+
+<!-- Display error messages if any -->
+<p th:if="${error}" th:text="${error}" style="color: red;"></p>
+</body>
+</html>
